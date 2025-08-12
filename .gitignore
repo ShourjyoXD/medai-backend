@@ -1,0 +1,15 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.env
+logs/
+build/
+dist/
+coverage/
+
+# OS and IDE specific
+.DS_Store
+.vscode/
+.idea/
