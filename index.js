@@ -4,7 +4,8 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
-const medicationRoutes = require('./routes/medicationRoutes'); // Import your new medication routes
+const medicationRoutes = require('./routes/medicationRoutes');
+const healthRecordRoutes = require('./routes/healthRecordRoutes'); // Import your new health record routes
 
 // Load environment variables
 dotenv.config();
@@ -24,11 +25,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/patients', patientRoutes);
 
 // Mount medication routes as a nested resource AND as a top-level resource for direct access
-// This allows paths like /api/patients/:patientId/medications
 app.use('/api/patients/:patientId/medications', medicationRoutes);
-// And also direct access like /api/medications/:id for individual medication management
-app.use('/api/medications', medicationRoutes);
+app.use('/api/medications', medicationRoutes); // For direct access to medication by ID
 
+// Mount health record routes as a nested resource AND as a top-level resource for direct access
+// This allows paths like /api/patients/:patientId/healthrecords
+app.use('/api/patients/:patientId/healthrecords', healthRecordRoutes);
+// And also direct access like /api/healthrecords/:id for individual health record management
+app.use('/api/healthrecords', healthRecordRoutes);
 
 // Basic route (for testing server status)
 app.get('/', (req, res) => {
