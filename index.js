@@ -1,8 +1,9 @@
 // index.js (or server.js)
 const express = require('express');
 const dotenv = require('dotenv');
-const connectDB = require('./config/db'); // Your DB connection
-const authRoutes = require('./routes/authRoutes'); // Your auth routes
+const connectDB = require('./config/db');
+const authRoutes = require('./routes/authRoutes');
+const patientRoutes = require('./routes/patientRoutes'); // Import your new patient routes
 
 // Load environment variables
 dotenv.config();
@@ -18,12 +19,9 @@ app.use(express.json());
 // Mount authentication routes
 app.use('/api/auth', authRoutes);
 
-// Example of a protected route (e.g., to get patient data)
-// const { protect, authorize } = require('./middleware/authMiddleware');
-// app.get('/api/patients', protect, authorize('user', 'doctor', 'admin'), (req, res) => {
-//   res.status(200).json({ success: true, message: `Welcome ${req.user.email}! Here's your patient data.` });
-// });
-
+// Mount patient profile routes
+// All routes under /api/patients will now be handled by patientRoutes
+app.use('/api/patients', patientRoutes);
 
 // Basic route (for testing server status)
 app.get('/', (req, res) => {
