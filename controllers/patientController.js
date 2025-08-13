@@ -34,8 +34,12 @@ exports.getPatientProfiles = async (req, res, next) => {
   try {
     // Find all patient profiles belonging to the authenticated user
     const patients = await PatientProfile.find({ userId: req.user.id })
-      .populate('userId', 'email phoneNumber') // Optionally populate user info
-      .populate('currentMedications', 'name dosage'); // Populate medication names/dosages if Medication model is ready
+      .populate('userId', 'email phoneNumber'); // Populate user info (email and phone number)
+
+      // IMPORTANT: Keep 'currentMedications' populate commented out for now.
+      // Uncomment ONLY after you have defined the Medication model in models/Medication.js
+      // and created at least one Medication document.
+      // .populate('currentMedications', 'name dosage');
 
     res.status(200).json({
       success: true,
@@ -53,7 +57,9 @@ exports.getPatientProfiles = async (req, res, next) => {
 // @access  Private (User)
 exports.getPatientProfile = async (req, res, next) => {
   try {
-    const patient = await PatientProfile.findById(req.params.id);
+    const patient = await PatientProfile.findById(req.params.id)
+      .populate('userId', 'email phoneNumber'); // Populate user info for single patient view
+      // .populate('currentMedications', 'name dosage'); // Uncomment after Medication model is ready
 
     if (!patient) {
       return res.status(404).json({ success: false, error: `Patient profile not found with id of ${req.params.id}` });
@@ -134,7 +140,7 @@ exports.deletePatientProfile = async (req, res, next) => {
       return res.status(401).json({ success: false, error: `User ${req.user.id} is not authorized to delete this patient profile` });
     }
 
-    await patient.deleteOne(); // Use deleteOne() or remove() in Mongoose 5/6, or findByIdAndDelete in Mongoose 7+
+    await patient.deleteOne();
 
     res.status(200).json({
       success: true,
