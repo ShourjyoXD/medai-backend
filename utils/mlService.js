@@ -1,33 +1,55 @@
-// medai-backend/utils/mlService.js
 const axios = require('axios');
 
-// Replace with the actual URL of your ML service
-// Ensure Flask app is running on this port (e.g., 5001)
-const ML_SERVICE_URL = process.env.ML_SERVICE_URL || 'http://localhost:5001';
+// It's good practice to use environment variables for service URLs
+const FLASK_ML_SERVICE_URL = process.env.FLASK_ML_SERVICE_URL || 'http://localhost:5001';
 
 /**
- * Sends data to the ML service for prediction.
- * @param {Object} data - The data payload to send to the ML service (e.g., { features: [value] }).
- * @param {string} endpoint - The specific endpoint on the ML service (e.g., '/predict').
- * @returns {Promise<Object>} - The prediction result from the ML service.
+ * Sends patient data to the Flask ML service to predict CVD risk.
+ * @param {object} patientData An object containing all required features for prediction.
+ * Expected format: {
+ * age: number,
+ * gender: number (0 for male, 1 for female),
+ * height: number (cm),
+ * weight: number (kg),
+ * ap_hi: number (systolic BP),
+ * ap_lo: number (diastolic BP),
+ * cholesterol: number (1: normal, 2: above normal, 3: high),
+ * gluc: number (1: normal, 2: above normal, 3: high),
+ * smoke: number (0: no, 1: yes),
+ * alco: number (0: no, 1: yes),
+ * active: number (0: no, 1: yes)
+ * }
+ * @returns {Promise<object>} A promise that resolves to the prediction result or an error.
  */
-exports.callMlService = async (data, endpoint = '/predict') => {
-  try {
-    const response = await axios.post(`${ML_SERVICE_URL}${endpoint}`, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data; // This will contain the 'prediction' object from Flask
-  } catch (error) {
-    console.error(`Error calling ML service at ${ML_SERVICE_URL}${endpoint}:`, error.message);
-    // Log more details if it's an Axios error with a response
-    if (error.response) {
-      console.error('ML service response status:', error.response.status);
-      console.error('ML service response data:', error.response.data);
-    } else if (error.request) {
-      console.error('No response received from ML service:', error.request);
+async function predictCvdRisk(patientData) { // Renamed function for clarity
+    try {
+        // Log the data being sent for debugging
+        console.log('Sending data to Flask ML service:', patientData);
+
+        const response = await axios.post(`${FLASK_ML_SERVICE_URL}/predict_risk`, patientData); // Use /predict_risk
+
+        console.log('Received response from Flask ML service:', response.data);
+        return response.data; // This will contain prediction_class, probabilities, send_alert
+    } catch (error) {
+        console.error('Error calling Flask ML service:', error.message);
+        // More detailed error logging for Axios errors
+        if (error.response) {
+            console.error('Flask ML service responded with status:', error.response.status);
+            console.error('Flask ML service error data:', error.response.data);
+            return {
+                error: `ML service error: ${error.response.data.error || 'Unknown error'}`,
+                status: error.response.status
+            };
+        } else if (error.request) {
+            console.error('No response received from Flask ML service:', error.request);
+            return { error: 'ML service is unreachable' };
+        } else {
+            console.error('Error setting up request to Flask ML service:', error.message);
+            return { error: 'Error processing ML request' };
+        }
     }
-    throw new Error('Failed to get prediction from ML service');
-  }
+}
+
+module.exports = {
+    predictCvdRisk
 };
