@@ -5,8 +5,8 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const medicationRoutes = require('./routes/medicationRoutes');
-const healthRecordRoutes = require('./routes/healthRecordRoutes'); // Import your new health record routes
-const errorHandler = require('./middleware/errorMiddleware'); // <--- NEW: Import the global error handler
+const healthRecordRoutes = require('./routes/healthRecordRoutes');
+const errorHandler = require('./middleware/errorMiddleware'); // Import the global error handler
 
 // Load environment variables
 dotenv.config();
@@ -25,22 +25,32 @@ app.use('/api/auth', authRoutes);
 // Mount patient profile routes
 app.use('/api/patients', patientRoutes);
 
-// Mount medication routes as a nested resource AND as a top-level resource for direct access
+// Mount medication routes:
+// 1. As a nested resource under a specific patient
+// The medicationRoutes router will use `mergeParams: true` to access `patientId`.
 app.use('/api/patients/:patientId/medications', medicationRoutes);
-app.use('/api/medications', medicationRoutes); // For direct access to medication by ID
 
-// Mount health record routes as a nested resource AND as a top-level resource for direct access
-// This allows paths like /api/patients/:patientId/healthrecords
+// 2. As a top-level resource for direct access to individual medications (e.g., PUT, GET, DELETE by medication ID).
+// This works because the medicationRoutes defines paths like '/:id' for these operations.
+app.use('/api/medications', medicationRoutes);
+
+
+// Mount health record routes:
+// 1. As a nested resource under a specific patient
+// The healthRecordRoutes router will use `mergeParams: true` to access `patientId`.
 app.use('/api/patients/:patientId/healthrecords', healthRecordRoutes);
-// And also direct access like /api/healthrecords/:id for individual health record management
+
+// 2. As a top-level resource for direct access to individual health records (e.g., PUT, GET, DELETE by health record ID).
+// This also works because healthRecordRoutes defines paths like '/:id' for direct access.
 app.use('/api/healthrecords', healthRecordRoutes);
+
 
 // Basic route (for testing server status)
 app.get('/', (req, res) => {
     res.send('MedAI API is running...');
 });
 
-// <--- NEW: Global Error Handler Middleware (MUST be placed AFTER all route handlers)
+// Global Error Handler Middleware (MUST be placed AFTER all route handlers)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
