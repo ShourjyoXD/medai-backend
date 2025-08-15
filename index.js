@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const medicationRoutes = require('./routes/medicationRoutes');
 const healthRecordRoutes = require('./routes/healthRecordRoutes'); // Import your new health record routes
+const errorHandler = require('./middleware/errorMiddleware'); // <--- NEW: Import the global error handler
 
 // Load environment variables
 dotenv.config();
@@ -36,11 +37,21 @@ app.use('/api/healthrecords', healthRecordRoutes);
 
 // Basic route (for testing server status)
 app.get('/', (req, res) => {
-  res.send('MedAI API is running...');
+    res.send('MedAI API is running...');
 });
+
+// <--- NEW: Global Error Handler Middleware (MUST be placed AFTER all route handlers)
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+const server = app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+
+// Optional: Handle unhandled promise rejections (good practice for robustness)
+process.on('unhandledRejection', (err, promise) => {
+    console.error(`Error: ${err.message}`);
+    // Close server & exit process
+    server.close(() => process.exit(1));
 });

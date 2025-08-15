@@ -6,25 +6,35 @@ const {
     getPatientProfile,
     updatePatientProfile,
     deletePatientProfile,
-    recordPatientHealthData, // <--- NEW: Import the new function
+    recordPatientHealthData,
 } = require('../controllers/patientController');
 const { protect, authorize } = require('../middleware/authMiddleware');
+const {
+    validatePatientProfile,
+    validateHealthData,
+    handleValidationErrors // Import the error handler middleware
+} = require('../middleware/validationMiddleware'); // Import your validation middleware
 
 const router = express.Router();
 
 // Routes that don't require an ID in the URL
 router.route('/')
-    .post(protect, createPatientProfile) // Only authenticated users can create
-    .get(protect, getPatientProfiles); // Only authenticated users can get their patient profiles
+    // Added validatePatientProfile and handleValidationErrors for creation
+    .post(protect, validatePatientProfile, handleValidationErrors, createPatientProfile)
+    .get(protect, getPatientProfiles);
 
 // Routes that require a specific patient ID
 router.route('/:id')
-    .get(protect, getPatientProfile) // Get a specific patient profile
-    .put(protect, updatePatientProfile) // Update a specific patient profile
-    .delete(protect, deletePatientProfile); // Delete a specific patient profile
+    // Added validation for the ':id' parameter for GET, PUT, and DELETE
+    // The `param` check is a simplified version; you could also move this to validationMiddleware.js
+    .get(protect, validateHealthData[0], handleValidationErrors, getPatientProfile) // Assuming validateHealthData[0] targets 'id' param
+    // Added validatePatientProfile and handleValidationErrors for update
+    .put(protect, validatePatientProfile, handleValidationErrors, updatePatientProfile)
+    .delete(protect, validateHealthData[0], handleValidationErrors, deletePatientProfile); // Assuming validateHealthData[0] targets 'id' param
 
-// --- NEW ROUTE: For recording health data and getting ML prediction ---
+// NEW ROUTE: For recording health data and getting ML prediction
+// Added validateHealthData and handleValidationErrors for health data submission
 router.route('/:id/health-data')
-    .post(protect, recordPatientHealthData); // POST request to record new health data
+    .post(protect, validateHealthData, handleValidationErrors, recordPatientHealthData);
 
 module.exports = router;
