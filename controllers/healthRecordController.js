@@ -1,6 +1,7 @@
 // controllers/healthRecordController.js
 const HealthRecord = require('../models/HealthRecord');
-const PatientProfile = require('../models/PatientProfile'); // To ensure patient exists and for authorization checks
+const PatientProfile = require('../models/PatientProfile');
+const { callMlService } = require('../utils/mlService'); // Import the ML service utility
 
 // @desc    Add a new health record for a patient
 // @route   POST /api/patients/:patientId/healthrecords
@@ -205,5 +206,70 @@ exports.deleteHealthRecord = async (req, res, next) => {
     }
     console.error(err.message);
     res.status(500).json({ success: false, error: 'Server Error' });
+  }
+};
+
+// --- NEW FUNCTION FOR ML INTEGRATION ---
+// @desc    Get latest blood pressure and send to ML service for prediction
+// @route   GET /api/patients/:patientId/healthrecords/predict-bp-risk
+// @access  Private (User)
+exports.predictBpRisk = async (req, res, next) => {
+  try {
+    const { patientId } = req.params;
+
+    // 1. Authenticate and authorize patient profile access
+    const patientProfile = await PatientProfile.findById(patientId);
+    if (!patientProfile) {
+      return res.status(404).json({ success: false, error: `Patient profile not found with id of ${patientId}` });
+    }
+    if (patientProfile.userId.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ success: false, error: `User ${req.user.id} is not authorized to access this patient profile's data.` });
+    }
+
+    // 2. Fetch the latest blood pressure record for the patient
+    const latestBp = await HealthRecord.findOne({
+      patientId,
+      type: 'blood_pressure'
+    }).sort({ recordedAt: -1 }); // Get the most recent one
+
+    if (!latestBp) {
+      return res.status(404).json({ success: false, error: `No blood pressure records found for patient ${patientId}.` });
+    }
+
+    // 3. Prepare data for the ML service
+    let mlInputFeatures;
+    // This logic attempts to extract systolic/diastolic if present
+    if (latestBp.value && typeof latestBp.value === 'object' && latestBp.value.systolic && latestBp.value.diastolic) {
+      // If BP is stored as { systolic, diastolic } in 'value'
+      mlInputFeatures = [latestBp.value.systolic, latestBp.value.diastolic];
+    } else if (latestBp.systolic && latestBp.diastolic) { // Fallback if BP was stored directly as separate fields (less likely with your schema)
+      mlInputFeatures = [latestBp.systolic, latestBp.diastolic];
+    } else {
+        // Fallback for our dummy model, assuming a single numeric value
+        // You'll replace this with actual feature engineering for your real model
+        mlInputFeatures = [latestBp.value || 0]; // Send value if it exists, else 0
+    }
+
+    // Our dummy model expects a single feature, so let's pick one for now
+    // In a real scenario, you'd send all features your ML model expects
+    const dummyFeature = mlInputFeatures[0] || 0; // Use systolic or any first value
+
+    // 4. Call the ML service
+    const mlResponse = await callMlService({ features: [dummyFeature] }); // Send features as expected by Flask app
+
+    // 5. Process and send the ML prediction back
+    res.status(200).json({
+      success: true,
+      data: {
+        patientId: patientId,
+        latestBloodPressure: latestBp,
+        mlPrediction: mlResponse.prediction, // Assuming Flask returns { prediction: [...] }
+        message: 'ML prediction based on latest blood pressure.'
+      }
+    });
+
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ success: false, error: err.message || 'Server Error calling ML service' });
   }
 };

@@ -7,6 +7,7 @@ const {
   getHealthRecord,
   updateHealthRecord,
   deleteHealthRecord,
+  predictBpRisk // <--- IMPORTANT: This is the new function imported
 } = require('../controllers/healthRecordController');
 const { protect } = require('../middleware/authMiddleware'); // Assuming 'authorize' is not strictly needed for all health records yet
 
@@ -21,6 +22,13 @@ router.route('/')
 // Route for getting health records of a specific type for a patient
 router.route('/type/:type')
   .get(protect, getHealthRecordsByTypeForPatient);
+
+// <--- NEW ROUTE FOR ML INTEGRATION START --->
+// Route to get latest blood pressure and send to ML service for prediction
+router.route('/predict-bp-risk')
+  .get(protect, predictBpRisk);
+// <--- NEW ROUTE FOR ML INTEGRATION END --->
+
 
 // Routes for specific health records (by health record ID)
 // These routes do NOT require patientId in the URL if accessed directly via /api/healthrecords/:id
