@@ -5,6 +5,7 @@ const User = require('../models/User'); // Import the User model
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = async (req, res, next) => {
+  console.log('Register route hit! Request body:', req.body);
   try {
     const { email, password, phoneNumber, emergencyContact1, emergencyContact2, emergencyContact3 } = req.body;
 
