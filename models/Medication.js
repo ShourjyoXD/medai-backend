@@ -15,7 +15,7 @@ const MedicationSchema = new mongoose.Schema({
         maxlength: [100, 'Medication name cannot be more than 100 characters'],
     },
     dosage: {
-        type: String, // e.g., "10mg", "2 tablets", "5ml"
+        type: String, 
         required: [true, 'Please add the dosage'],
         trim: true,
         maxlength: [50, 'Dosage cannot be more than 50 characters'],
@@ -37,7 +37,7 @@ const MedicationSchema = new mongoose.Schema({
     },
     endDate: {
         type: Date,
-        // Optional: Only required if it's a temporary medication
+        
         // Custom validation to ensure endDate is not before startDate if both are present
         validate: {
             validator: function (value) {
@@ -57,7 +57,7 @@ const MedicationSchema = new mongoose.Schema({
     },
 });
 
-// --- NEW: Mongoose Hooks for PatientProfile Integration ---
+
 
 // Static method to update the patient's currentMedications array
 MedicationSchema.statics.updatePatientMedications = async function(patientId, medicationId, action) {
@@ -71,19 +71,19 @@ MedicationSchema.statics.updatePatientMedications = async function(patientId, me
         }
 
         if (action === 'add') {
-            // Add medication ID if not already present
+            
             if (!patient.currentMedications.includes(medicationId)) {
                 patient.currentMedications.push(medicationId);
             }
         } else if (action === 'remove') {
-            // Remove medication ID
+            
             patient.currentMedications = patient.currentMedications.filter(
                 (med) => med.toString() !== medicationId.toString()
             );
         }
         await patient.save();
     } catch (err) {
-        // Log the error for debugging purposes
+        
         console.error(`Error updating patient's medications in PatientProfile: ${err.message}`);
     }
 };
@@ -94,7 +94,7 @@ MedicationSchema.post('save', async function() {
     await this.constructor.updatePatientMedications(this.patientId, this._id, 'add');
 });
 
-// PRE-DELETE ONE hook: Remove medication ID from patient's currentMedications array
+
 MedicationSchema.pre('deleteOne', { document: true, query: false }, async function() {
     // 'this' refers to the medication document about to be deleted
     await this.constructor.updatePatientMedications(this.patientId, this._id, 'remove');

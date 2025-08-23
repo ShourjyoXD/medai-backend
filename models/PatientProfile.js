@@ -64,7 +64,6 @@ const PatientProfileSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  // --- NEW FIELD: healthRecords for time-series data and ML predictions ---
   healthRecords: [
     {
       date: { // Date and time of this specific health record entry
@@ -97,7 +96,7 @@ const PatientProfileSchema = new mongoose.Schema({
       cvdAlertTriggered: { // Boolean indicating if an alert was triggered
         type: Boolean,
       },
-      // Add any other specific vital signs or health metrics relevant to this snapshot
+      
       notes: { // Optional notes for this specific health record
         type: String,
         maxlength: [500, 'Notes can not be more than 500 characters'],
@@ -105,17 +104,4 @@ const PatientProfileSchema = new mongoose.Schema({
     }
   ]
 });
-
-// Virtual for age calculation if dateOfBirth is primary source for profile view
-// patientProfileSchema.virtual('age').get(function() {
-//   const today = new Date();
-//   const birthDate = this.dateOfBirth;
-//   let age = today.getFullYear() - birthDate.getFullYear();
-//   const m = today.getMonth() - birthDate.getMonth();
-//   if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-//     age--;
-//   }
-//   return age;
-// });
-
 module.exports = mongoose.model('PatientProfile', PatientProfileSchema);

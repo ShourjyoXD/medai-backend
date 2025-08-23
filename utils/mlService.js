@@ -1,7 +1,7 @@
 const axios = require('axios');
 
 // It's good practice to use environment variables for service URLs
-const FLASK_ML_SERVICE_URL = process.env.FLASK_ML_SERVICE_URL || 'http://localhost:5001';
+const FLASK_ML_SERVICE_URL = process.env.FLASK_ML_SERVICE_URL || 'https://medai-ml.onrender.com';
 
 /**
  * Sends patient data to the Flask ML service to predict CVD risk.

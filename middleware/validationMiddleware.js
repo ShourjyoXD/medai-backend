@@ -29,12 +29,7 @@ const validatePatientProfile = [
         .optional()
         .trim()
         .isLength({ max: 2000 }).withMessage('Medical history cannot be more than 2000 characters.'),
-    // You can add more specific validations for lastRecordedBloodPressure and lastRecordedGlucose if they were to be updated directly via the profile endpoint
-    // For example:
-    // body('lastRecordedBloodPressure.systolic').optional().isNumeric().withMessage('Systolic BP must be a number.'),
-    // body('lastRecordedBloodPressure.diastolic').optional().isNumeric().withMessage('Diastolic BP must be a number.'),
-    // body('lastRecordedGlucose.value').optional().isNumeric().withMessage('Glucose value must be a number.'),
-    // body('lastRecordedGlucose.unit').optional().isIn(['mg/dL', 'mmol/L']).withMessage('Invalid glucose unit.'),
+    
 ];
 
 // Validation for recording patient health data (if you use this for embedded records in PatientProfile)
@@ -224,9 +219,9 @@ const handleValidationErrors = (req, res, next) => {
 
 module.exports = {
     validatePatientProfile,
-    validateHealthData, // Keep this if you still use it for embedded health records in PatientProfile
-    validateMedication, // <--- NEW
-    validateHealthRecordBody, // <--- NEW for standalone HealthRecord model
-    validateObjectIdParam, // <--- NEW
+    validateHealthData, 
+    validateMedication, 
+    validateHealthRecordBody, 
+    validateObjectIdParam, 
     handleValidationErrors
 };

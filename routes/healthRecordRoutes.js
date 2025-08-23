@@ -53,11 +53,11 @@ router.route('/type/:type')
 
 // Route to get patient health data and send to ML service for CVD risk prediction
 router.route('/predict-cvd-risk') // Corrected route name to reflect CVD prediction
-    .get(
+    .post( // Changed from .get to .post
         protect,
-        validateObjectIdParam('patientId'), // Validate patientId from URL param
+        validateHealthRecordBody, // Assuming you will add new validation rules for ML data
         handleValidationErrors,
-        predictCvdRisk
+        predictCvdRisk // This function will access req.body
     );
 
 // ----------------------------------------------------------------------

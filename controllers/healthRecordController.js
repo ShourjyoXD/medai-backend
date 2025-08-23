@@ -1,7 +1,7 @@
 // controllers/healthRecordController.js
 const HealthRecord = require('../models/HealthRecord');
 const PatientProfile = require('../models/PatientProfile');
-const mlService = require('../utils/mlService'); // Assuming this is the correct path to your ML service
+const mlService = require('../utils/mlService'); 
 const asyncHandler = require('../middleware/asyncHandler'); // Import asyncHandler
 const ErrorResponse = require('../utils/errorHandler');   // Import ErrorResponse
 
@@ -31,9 +31,6 @@ exports.createHealthRecord = asyncHandler(async (req, res, next) => { // Wrapped
     // Check authorization using the helper function
     await checkPatientProfileAccess(req, res, next, patientId);
 
-    // If you are using the separate HealthRecord model and this endpoint
-    // you might want to integrate ML prediction here directly if every new record implies a prediction
-    // OR keep this simple for just recording, and use predictBpRisk for specific prediction requests.
 
     // Add patientId to the request body before creating the record
     req.body.patientId = patientId;
@@ -118,15 +115,7 @@ exports.updateHealthRecord = asyncHandler(async (req, res, next) => { // Wrapped
     // Check if the authenticated user owns the patient profile associated with this health record
     await checkPatientProfileAccess(req, res, next, healthRecord.patientId);
 
-    // Prevent direct update of ML-generated fields if they were part of the HealthRecord schema
-    // (This is based on the assumption you might add ML fields to this HealthRecord model later)
-    // For now, these are not directly in HealthRecord, but good to keep in mind for updates.
     const updateBody = { ...req.body };
-    // If you intend for ML fields to be here, uncomment and refine:
-    // delete updateBody.cvdPredictionClass;
-    // delete updateBody.cvdPredictionProbabilities;
-    // delete updateBody.cvdAlertTriggered;
-
     healthRecord = await HealthRecord.findByIdAndUpdate(req.params.id, updateBody, {
         new: true,
         runValidators: true,
@@ -160,10 +149,6 @@ exports.deleteHealthRecord = asyncHandler(async (req, res, next) => { // Wrapped
     });
 });
 
-// --- NEW FUNCTION FOR ML INTEGRATION ---
-// @desc    Get patient health data and send to ML service for CVD risk prediction
-// @route   GET /api/patients/:patientId/healthrecords/predict-cvd-risk
-// @access  Private (User)
 exports.predictCvdRisk = asyncHandler(async (req, res, next) => { // Wrapped with asyncHandler
     const { patientId } = req.params;
 
@@ -171,51 +156,15 @@ exports.predictCvdRisk = asyncHandler(async (req, res, next) => { // Wrapped wit
     const patientProfile = await checkPatientProfileAccess(req, res, next, patientId);
     if (!patientProfile) return; // If helper returned an error, it already called next()
 
-    // 2. Fetch the latest required health records for the patient
-    // Based on your HealthRecord schema and typical CVD models, we need specific data points.
-    // This is a simplified example; a real ML model might need all features from the last record.
-
-    // Let's assume we need all the 11 features that your Flask ML model expects
-    // from a single, comprehensive health record.
-    // For this, we'll fetch the most recent 'comprehensive' health record or the latest of each type.
-    // The most robust way is to have a health record that stores all required features in one entry.
-    // If your health records are granular (e.g., separate BP, glucose records), you'd need to fetch each
-    // latest type and combine them.
-
-    // For simplicity, let's assume the ML model uses the same features as previously discussed for patientController's recordPatientHealthData:
-    // age, gender, height, weight, ap_hi, ap_lo, cholesterol, gluc, smoke, alco, active
-
-    // If HealthRecord stores these *individually*, you'd need to fetch them:
-    // const latestBloodPressure = await HealthRecord.findOne({ patientId, type: 'blood_pressure' }).sort({ recordedAt: -1 });
-    // const latestGlucose = await HealthRecord.findOne({ patientId, type: 'glucose' }).sort({ recordedAt: -1 });
-    // etc.
-    // Then combine them into mlInputData.
-
-    // A more practical approach for ML prediction:
-    // Either the client sends the full set of features from the latest available data,
-    // or you have a specific "CVD_RISK_RECORD" type in HealthRecord that contains all these fields.
-    // For now, let's just use the `patientProfile` data and assume that's what the ML service needs
-    // along with potentially latest BP from HealthRecords.
-
-    // This section needs to gather ALL the 11 features required by your Flask ML model.
-    // Given your `HealthRecord` model is for specific types, you'd have to combine data from `PatientProfile`
-    // and multiple `HealthRecord` entries if they are truly granular.
-    // For a quick fix, let's grab general patient profile info and the latest BP.
-    // **This is a placeholder; you MUST ensure these features match your actual ML model's input expectations.**
     const latestBpRecord = await HealthRecord.findOne({ patientId, type: 'blood_pressure' }).sort({ recordedAt: -1 });
 
     if (!latestBpRecord) {
         return next(new ErrorResponse(`Cannot predict CVD risk: No recent blood pressure record found for patient ${patientId}.`, 400));
     }
 
-    // Extract necessary data from patientProfile and latestBpRecord
-    // Assuming patientProfile has age, gender, height, weight, cholesterol, gluc, smoke, alco, active
-    // This requires your PatientProfile model to have these fields or default values for a baseline prediction.
-    // For now, let's pull them directly from req.body as a placeholder if not in patientProfile or HealthRecord.
-    // In a real app, you'd need a strategy to get all 11 features consistently.
     const {
-        age, gender, height, weight, cholesterol, gluc, smoke, alco, active // These must come from somewhere
-    } = req.body; // TEMPORARY: These should ideally come from patientProfile or other latest HealthRecords
+        age, gender, height, weight, cholesterol, gluc, smoke, alco, active 
+    } = req.body;
 
     // Using values from the latest BP record for ap_hi/ap_lo
     const ap_hi = latestBpRecord.systolic;

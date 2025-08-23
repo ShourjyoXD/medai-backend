@@ -26,9 +26,7 @@ const HealthRecordSchema = new mongoose.Schema({
         lowercase: true, // Store types in lowercase for consistency
         trim: true,
     },
-    // --- Refined Data Fields ---
-    // Single 'value' field for simple numerical records (glucose, weight, heart_rate)
-    // For types like 'blood_pressure', use dedicated 'systolic' and 'diastolic'
+    
     value: {
         type: Number, // Restrict to Number for specific types
         // Required only for types that are expected to have a single numeric value
@@ -101,9 +99,7 @@ HealthRecordSchema.pre('validate', function(next) {
         // For types that might only have notes or a free-form 'value' (if Mixed was kept)
         // Ensure that numerical value fields are not required or strictly used here
         if (this.value !== undefined && this.value !== null) {
-             // If 'value' is intended for a non-numeric, free-form type, you'd need to adjust 'type: Number' for 'value'
-             // For now, if value is present for these, it must be a Number based on schema
-             // Consider removing 'value' and using only 'notes' or a separate 'details' Mixed field for these types
+             
         }
     }
     next();
